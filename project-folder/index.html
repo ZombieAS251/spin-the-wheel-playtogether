@@ -1,0 +1,1580 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Together - Lucky Wheel</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Arial Rounded MT Bold', 'Fredoka One', 'Comic Sans MS', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1a1c2e 0%, #0d0e17 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            color: #fff;
+            padding-bottom: 30px;
+        }
+
+        /* =========================================================
+           CONFETTI
+        ========================================================= */
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* =========================================================
+           HEADER / PLAY TOGETHER LOGO
+        ========================================================= */
+
+        header {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .main-logo {
+            display: block;
+            width: auto;
+            max-width: 280px;
+            max-height: 100px;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.5));
+        }
+
+        /* =========================================================
+           MAIN WHEEL CONTAINER
+        ========================================================= */
+
+        .wheel-outer-wrapper {
+            position: relative;
+            width: 440px;
+            height: 440px;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* =========================================================
+           GOLD OUTER RING
+        ========================================================= */
+
+        .gold-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(
+                135deg,
+                #ffe066 0%,
+                #f5af19 35%,
+                #e65c00 70%,
+                #ffe066 100%
+            );
+            box-shadow:
+                0 0 25px rgba(245, 175, 25, 0.6),
+                inset 0 0 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* =========================================================
+           MARQUEE BULBS
+        ========================================================= */
+
+        .bulbs-container {
+            position: absolute;
+            width: 93%;
+            height: 93%;
+            border-radius: 50%;
+            background: #2a1100;
+            border: 4px solid #b37700;
+        }
+
+        .bulb {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #555;
+            box-shadow: inset 0 0 3px #000;
+            top: 50%;
+            left: 50%;
+            margin-top: -7px;
+            margin-left: -7px;
+            transition:
+                background-color 0.1s,
+                box-shadow 0.1s;
+        }
+
+        .bulb.active-1 {
+            background-color: #fffeb3;
+            box-shadow:
+                0 0 10px #ffea00,
+                0 0 18px #ffea00;
+        }
+
+        .bulb.active-2 {
+            background-color: #ff9999;
+            box-shadow:
+                0 0 10px #ff3333,
+                0 0 18px #ff3333;
+        }
+
+        /* =========================================================
+           CANVAS WHEEL
+        ========================================================= */
+
+        .wheel-canvas-container {
+            position: absolute;
+            width: 82%;
+            height: 82%;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            transform: rotate(0deg);
+            transition: transform 0s cubic-bezier(0.15, 0.9, 0.15, 1);
+        }
+
+        /* =========================================================
+           POINTER
+        ========================================================= */
+
+        .wheel-pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 46px;
+            z-index: 20;
+            filter: drop-shadow(0px 4px 5px rgba(0, 0, 0, 0.6));
+        }
+
+        .wheel-pointer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 36px solid #ff2a2a;
+        }
+
+        .wheel-pointer::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 28px solid #ffcc00;
+        }
+
+        /* =========================================================
+           CENTER SPIN BUTTON
+        ========================================================= */
+
+        .spin-btn {
+            position: absolute;
+            z-index: 15;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                #ffea00 0%,
+                #ff9800 100%
+            );
+            border: 5px solid #ffffff;
+            box-shadow:
+                0 0 0 4px #e65c00,
+                0 8px 15px rgba(0, 0, 0, 0.6),
+                inset 0 -4px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #7a0000;
+            font-weight: 900;
+            font-size: 14px;
+            line-height: 1.1;
+            text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.8);
+            transition:
+                transform 0.1s,
+                filter 0.1s;
+        }
+
+        .spin-btn:hover {
+            transform: scale(1.06);
+            filter: brightness(1.1);
+        }
+
+        .spin-btn:active {
+            transform: scale(0.95);
+        }
+
+        .spin-btn.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+
+        /* =========================================================
+           WINNER MODAL
+        ========================================================= */
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: linear-gradient(
+                180deg,
+                #2b2e4a 0%,
+                #181a29 100%
+            );
+            border: 4px solid #ffcc00;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 380px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow:
+                0 0 30px rgba(255, 204, 0, 0.4),
+                0 20px 40px rgba(0, 0, 0, 0.8);
+            transform: scale(0.7);
+            transition:
+                transform 0.3s cubic-bezier(
+                    0.175,
+                    0.885,
+                    0.32,
+                    1.275
+                );
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            color: #ffcc00;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .modal-image-container {
+            width: 190px;
+            height: 190px;
+            margin: 10px 0 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-image-container img {
+            display: block;
+            max-width: 92%;
+            max-height: 92%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* =========================================================
+           CLOSE / CONTINUE BUTTON
+        ========================================================= */
+
+        .btn-action-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(
+                180deg,
+                #4CAF50 0%,
+                #2E7D32 100%
+            );
+            border: 2px solid #a5d6a7;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow:
+                0 4px 0 #1b5e20,
+                0 6px 12px rgba(0, 0, 0, 0.4);
+            transition:
+                transform 0.1s,
+                filter 0.1s;
+            text-transform: uppercase;
+        }
+
+        .btn-action-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-action-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1b5e20;
+        }
+
+        /* =========================================================
+           RESPONSIVE DESIGN
+        ========================================================= */
+
+        @media (max-width: 520px) {
+            .wheel-outer-wrapper {
+                width: 92vw;
+                height: 92vw;
+                max-width: 440px;
+                max-height: 440px;
+                margin-top: 15px;
+            }
+
+            .main-logo {
+                max-width: 70vw;
+                max-height: 90px;
+            }
+
+            .spin-btn {
+                width: 76px;
+                height: 76px;
+                font-size: 12px;
+            }
+
+            .bulb {
+                width: 11px;
+                height: 11px;
+                margin-top: -5.5px;
+                margin-left: -5.5px;
+            }
+
+            .modal-image-container {
+                width: 170px;
+                height: 170px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         CONFETTI CANVAS
+    ========================================================= -->
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- =========================================================
+         PLAY TOGETHER LOGO
+         
+         IMPORTANT:
+         Put your actual logo here:
+         assets/play-together.png
+    ========================================================= -->
+
+    <header>
+        <img
+            id="main-logo-img"
+            class="main-logo"
+            src="assets/play-together.png"
+            alt="Play Together Logo"
+        >
+    </header>
+
+    <!-- =========================================================
+         MAIN WHEEL
+    ========================================================= -->
+
+    <div class="wheel-outer-wrapper">
+
+        <!-- Pointer -->
+        <div class="wheel-pointer"></div>
+
+        <!-- Gold Ring -->
+        <div class="gold-ring">
+
+            <!-- Animated Bulbs -->
+            <div
+                class="bulbs-container"
+                id="bulbsContainer"
+            ></div>
+
+            <!-- Wheel Canvas -->
+            <div class="wheel-canvas-container">
+                <canvas
+                    id="wheelCanvas"
+                    width="800"
+                    height="800"
+                ></canvas>
+            </div>
+
+            <!-- Center Spin Button -->
+            <button
+                class="spin-btn"
+                id="spinBtn"
+                type="button"
+            >
+                SPIN<br>TO PICK
+            </button>
+
+        </div>
+    </div>
+
+    <!-- =========================================================
+         WINNER MODAL
+         
+         Only shows:
+         - Winner heading
+         - Winning PNG
+         - Close/continue button
+    ========================================================= -->
+
+    <div
+        class="modal-overlay"
+        id="resultModal"
+    >
+        <div class="modal-card">
+
+            <div class="modal-header">
+                ★ WINNER PICKED! ★
+            </div>
+
+            <div class="modal-image-container">
+                <img
+                    id="modalImg"
+                    src=""
+                    alt="Winner"
+                >
+            </div>
+
+            <button
+                class="btn-action-primary"
+                id="closeModalBtn"
+                type="button"
+            >
+                CONTINUE
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+
+        /* =========================================================
+           1. PERMANENT 10 WHEEL OPTIONS
+
+           Every option has:
+           - id
+           - color for the wheel segment
+           - image path
+
+           These NEVER change or get removed.
+        ========================================================= */
+
+        const MASTER_ITEMS = [
+            {
+                id: 'option1',
+                color: '#E91E63',
+                image: 'assets/option1.png'
+            },
+            {
+                id: 'option2',
+                color: '#FF9800',
+                image: 'assets/option2.png'
+            },
+            {
+                id: 'option3',
+                color: '#9C27B0',
+                image: 'assets/option3.png'
+            },
+            {
+                id: 'option4',
+                color: '#E040FB',
+                image: 'assets/option4.png'
+            },
+            {
+                id: 'option5',
+                color: '#2196F3',
+                image: 'assets/option5.png'
+            },
+            {
+                id: 'option6',
+                color: '#4CAF50',
+                image: 'assets/option6.png'
+            },
+            {
+                id: 'option7',
+                color: '#FFEB3B',
+                image: 'assets/option7.png'
+            },
+            {
+                id: 'option8',
+                color: '#FF5722',
+                image: 'assets/option8.png'
+            },
+            {
+                id: 'option9',
+                color: '#00BCD4',
+                image: 'assets/option9.png'
+            },
+            {
+                id: 'option10',
+                color: '#03A9F4',
+                image: 'assets/option10.png'
+            }
+        ];
+
+        /*
+         * IMPORTANT:
+         * activeItems is intentionally NOT used.
+         *
+         * MASTER_ITEMS is the permanent source.
+         * There are always exactly 10 segments.
+         */
+
+        const ITEMS = MASTER_ITEMS;
+
+        let loadedImages = {};
+
+        /* =========================================================
+           2. DOM REFERENCES
+        ========================================================= */
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const spinBtn = document.getElementById('spinBtn');
+
+        const bulbsContainer =
+            document.getElementById('bulbsContainer');
+
+        const resultModal =
+            document.getElementById('resultModal');
+
+        const modalImg =
+            document.getElementById('modalImg');
+
+        const closeModalBtn =
+            document.getElementById('closeModalBtn');
+
+        /* =========================================================
+           3. SPIN STATE
+        ========================================================= */
+
+        let currentRotation = 0;
+        let isSpinning = false;
+        let selectedIndex = -1;
+
+        /* =========================================================
+           4. SOUND FX
+        ========================================================= */
+
+        class SoundFX {
+
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (
+                        window.AudioContext ||
+                        window.webkitAudioContext
+                    )();
+                }
+
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTick() {
+
+                if (!this.ctx) return;
+
+                const osc =
+                    this.ctx.createOscillator();
+
+                const gain =
+                    this.ctx.createGain();
+
+                osc.type = 'triangle';
+
+                osc.frequency.setValueAtTime(
+                    400,
+                    this.ctx.currentTime
+                );
+
+                osc.frequency.exponentialRampToValueAtTime(
+                    80,
+                    this.ctx.currentTime + 0.04
+                );
+
+                gain.gain.setValueAtTime(
+                    0.3,
+                    this.ctx.currentTime
+                );
+
+                gain.gain.exponentialRampToValueAtTime(
+                    0.01,
+                    this.ctx.currentTime + 0.04
+                );
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+
+                osc.stop(
+                    this.ctx.currentTime + 0.04
+                );
+            }
+
+            playWinFanfare() {
+
+                if (!this.ctx) return;
+
+                const notes = [
+                    261.63,
+                    329.63,
+                    392.00,
+                    523.25,
+                    659.25,
+                    783.99
+                ];
+
+                notes.forEach((freq, index) => {
+
+                    const osc =
+                        this.ctx.createOscillator();
+
+                    const gain =
+                        this.ctx.createGain();
+
+                    const startTime =
+                        this.ctx.currentTime +
+                        index * 0.08;
+
+                    osc.type = 'sine';
+
+                    osc.frequency.setValueAtTime(
+                        freq,
+                        startTime
+                    );
+
+                    gain.gain.setValueAtTime(
+                        0,
+                        startTime
+                    );
+
+                    gain.gain.linearRampToValueAtTime(
+                        0.3,
+                        startTime + 0.02
+                    );
+
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.001,
+                        startTime + 0.3
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(startTime);
+
+                    osc.stop(
+                        startTime + 0.3
+                    );
+                });
+            }
+        }
+
+        const audio = new SoundFX();
+
+        /* =========================================================
+           5. PRELOAD THE 10 ACTUAL PNG FILES
+
+           No Base64.
+           No SVG fallback.
+           No generated replacement image.
+        ========================================================= */
+
+        function preloadImages(callback) {
+
+            let loadedCount = 0;
+
+            const total = ITEMS.length;
+
+            ITEMS.forEach((item) => {
+
+                const img = new Image();
+
+                img.onload = () => {
+
+                    loadedImages[item.id] = img;
+
+                    loadedCount++;
+
+                    if (loadedCount === total) {
+                        callback();
+                    }
+                };
+
+                img.onerror = () => {
+
+                    console.error(
+                        `Could not load image: ${item.image}`
+                    );
+
+                    /*
+                     * Keep trying to finish initialization.
+                     * The missing image simply will not be drawn.
+                     */
+                    loadedCount++;
+
+                    if (loadedCount === total) {
+                        callback();
+                    }
+                };
+
+                img.src = item.image;
+            });
+        }
+
+        /* =========================================================
+           6. MARQUEE BULBS
+        ========================================================= */
+
+        const numBulbs = 24;
+        const bulbs = [];
+
+        function initBulbs() {
+
+            bulbsContainer.innerHTML = '';
+
+            bulbs.length = 0;
+
+            const radius = 46;
+
+            for (let i = 0; i < numBulbs; i++) {
+
+                const angle =
+                    (i / numBulbs) *
+                    (2 * Math.PI);
+
+                const x =
+                    50 +
+                    radius *
+                    Math.cos(angle);
+
+                const y =
+                    50 +
+                    radius *
+                    Math.sin(angle);
+
+                const bulb =
+                    document.createElement('div');
+
+                bulb.className = 'bulb';
+
+                bulb.style.left = `${x}%`;
+                bulb.style.top = `${y}%`;
+
+                bulbsContainer.appendChild(bulb);
+
+                bulbs.push(bulb);
+            }
+        }
+
+        let bulbStep = 0;
+
+        function animateBulbs() {
+
+            bulbStep++;
+
+            bulbs.forEach((bulb, i) => {
+
+                bulb.classList.remove(
+                    'active-1',
+                    'active-2'
+                );
+
+                if (isSpinning) {
+
+                    if ((i + bulbStep) % 2 === 0) {
+
+                        bulb.classList.add(
+                            'active-1'
+                        );
+
+                    } else {
+
+                        bulb.classList.add(
+                            'active-2'
+                        );
+                    }
+
+                } else {
+
+                    if (
+                        (i + Math.floor(
+                            bulbStep / 3
+                        )) % 3 === 0
+                    ) {
+
+                        bulb.classList.add(
+                            'active-1'
+                        );
+                    }
+                }
+            });
+        }
+
+        setInterval(
+            animateBulbs,
+            150
+        );
+
+        /* =========================================================
+           7. DRAW THE WHEEL
+
+           ALWAYS:
+           - 10 segments
+           - Same positions
+           - Same images
+           - No text
+           - No removal
+        ========================================================= */
+
+        function drawWheel() {
+
+            const numSegments = ITEMS.length;
+
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            const radius = width / 2;
+
+            ctx.clearRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+            const arcSize =
+                (Math.PI * 2) /
+                numSegments;
+
+            for (
+                let i = 0;
+                i < numSegments;
+                i++
+            ) {
+
+                const item = ITEMS[i];
+
+                const startAngle =
+                    i * arcSize;
+
+                const endAngle =
+                    startAngle + arcSize;
+
+                /* -------------------------------------------------
+                   Draw colored segment
+                ------------------------------------------------- */
+
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    centerX,
+                    centerY
+                );
+
+                ctx.arc(
+                    centerX,
+                    centerY,
+                    radius,
+                    startAngle,
+                    endAngle
+                );
+
+                ctx.closePath();
+
+                ctx.fillStyle =
+                    item.color;
+
+                ctx.fill();
+
+                /* -------------------------------------------------
+                   Draw white separator
+                ------------------------------------------------- */
+
+                ctx.lineWidth = 4;
+
+                ctx.strokeStyle =
+                    '#ffffff';
+
+                ctx.stroke();
+
+                /* -------------------------------------------------
+                   Draw PNG IMAGE ONLY
+
+                   There is intentionally NO game-name text.
+                ------------------------------------------------- */
+
+                const img =
+                    loadedImages[item.id];
+
+                if (img) {
+
+                    ctx.save();
+
+                    /*
+                     * Move to the center of the segment.
+                     */
+                    const middleAngle =
+                        startAngle +
+                        arcSize / 2;
+
+                    ctx.translate(
+                        centerX,
+                        centerY
+                    );
+
+                    ctx.rotate(
+                        middleAngle
+                    );
+
+                    /*
+                     * The wheel has 10 segments.
+                     *
+                     * 105px gives the supplied PNGs a large,
+                     * visible size while keeping them safely
+                     * inside each segment.
+                     */
+                    const imgSize = 175;
+
+                    /*
+                     * Position image toward the outside
+                     * portion of the segment.
+                     */
+                    const imgRadius =
+                        radius * 0.62;
+
+                    /*
+                     * Draw using contain-like behavior.
+                     *
+                     * This preserves the PNG's aspect ratio
+                     * rather than forcing it into a square.
+                     */
+                    const sourceWidth =
+                        img.naturalWidth || img.width;
+
+                    const sourceHeight =
+                        img.naturalHeight || img.height;
+
+                    const scale =
+                        Math.min(
+                            imgSize / sourceWidth,
+                            imgSize / sourceHeight
+                        );
+
+                    const drawWidth =
+                        sourceWidth * scale;
+
+                    const drawHeight =
+                        sourceHeight * scale;
+
+                    ctx.drawImage(
+                        img,
+                        imgRadius -
+                            drawWidth / 2,
+                        -drawHeight / 2,
+                        drawWidth,
+                        drawHeight
+                    );
+
+                    ctx.restore();
+                }
+            }
+        }
+
+        /* =========================================================
+           8. SPIN MECHANISM
+
+           Every spin randomly chooses one of the SAME 10 items.
+
+           Nothing is removed.
+           Nothing is redistributed.
+           Nothing is reset.
+        ========================================================= */
+
+        function spin() {
+
+            if (isSpinning) {
+                return;
+            }
+
+            audio.init();
+
+            isSpinning = true;
+
+            spinBtn.classList.add(
+                'disabled'
+            );
+
+            /* -----------------------------------------------------
+               ALWAYS RANDOMLY SELECT FROM ALL 10 OPTIONS
+            ----------------------------------------------------- */
+
+            const numSegments =
+                ITEMS.length;
+
+            selectedIndex =
+                Math.floor(
+                    Math.random() *
+                    numSegments
+                );
+
+            /* -----------------------------------------------------
+               Calculate segment angle
+            ----------------------------------------------------- */
+
+            const arcSize =
+                360 /
+                numSegments;
+
+            /*
+             * Pick a random point inside the winning segment.
+             * Padding prevents stopping directly on a separator.
+             */
+            const sliceOffset =
+                Math.random() *
+                (arcSize - 6) +
+                3;
+
+            const targetSegmentAngle =
+                selectedIndex *
+                arcSize +
+                sliceOffset;
+
+            /*
+             * Pointer is at the top:
+             * 270 degrees.
+             */
+            const degreesToTop =
+                270 -
+                targetSegmentAngle;
+
+            /*
+             * Minimum 5 complete rotations.
+             */
+            const extraRotations =
+                360 * 5;
+
+            const currentMod =
+                currentRotation % 360;
+
+            let targetRotation =
+                currentRotation +
+                extraRotations +
+                (degreesToTop - currentMod);
+
+            if (
+                targetRotation <=
+                currentRotation
+            ) {
+                targetRotation += 360;
+            }
+
+            /* -----------------------------------------------------
+               Animation
+            ----------------------------------------------------- */
+
+            const duration = 5000;
+
+            const startTime =
+                performance.now();
+
+            const startRotation =
+                currentRotation;
+
+            const totalChange =
+                targetRotation -
+                startRotation;
+
+            let lastTickAngle =
+                startRotation;
+
+            function animate(currentTime) {
+
+                const elapsed =
+                    currentTime -
+                    startTime;
+
+                const progress =
+                    Math.min(
+                        elapsed / duration,
+                        1
+                    );
+
+                /*
+                 * Cubic ease-out.
+                 */
+                const easeOut =
+                    1 -
+                    Math.pow(
+                        1 - progress,
+                        3
+                    );
+
+                currentRotation =
+                    startRotation +
+                    totalChange *
+                    easeOut;
+
+                canvas.style.transform =
+                    `rotate(${currentRotation}deg)`;
+
+                /* -------------------------------------------------
+                   Tick sound
+                ------------------------------------------------- */
+
+                if (
+                    Math.abs(
+                        currentRotation -
+                        lastTickAngle
+                    ) >= arcSize
+                ) {
+
+                    audio.playTick();
+
+                    lastTickAngle =
+                        currentRotation;
+                }
+
+                if (progress < 1) {
+
+                    requestAnimationFrame(
+                        animate
+                    );
+
+                } else {
+
+                    /*
+                     * Make sure final rotation is exact.
+                     */
+                    currentRotation =
+                        targetRotation;
+
+                    canvas.style.transform =
+                        `rotate(${currentRotation}deg)`;
+
+                    onSpinComplete();
+                }
+            }
+
+            requestAnimationFrame(
+                animate
+            );
+        }
+
+        /* =========================================================
+           9. SPIN COMPLETE
+
+           IMPORTANT:
+           No item is removed here.
+        ========================================================= */
+
+        function onSpinComplete() {
+
+            isSpinning = false;
+
+            spinBtn.classList.remove(
+                'disabled'
+            );
+
+            /*
+             * Winner comes from the permanent ITEMS array.
+             */
+            const winningItem =
+                ITEMS[selectedIndex];
+
+            /* -----------------------------------------------------
+               Winner sound
+            ----------------------------------------------------- */
+
+            audio.playWinFanfare();
+
+            /* -----------------------------------------------------
+               Confetti
+            ----------------------------------------------------- */
+
+            launchConfetti();
+
+            /* -----------------------------------------------------
+               Winner popup
+            ----------------------------------------------------- */
+
+            setTimeout(() => {
+
+                const winningImage =
+                    loadedImages[
+                        winningItem.id
+                    ];
+
+                if (winningImage) {
+
+                    modalImg.src =
+                        winningImage.src;
+
+                } else {
+
+                    modalImg.removeAttribute(
+                        'src'
+                    );
+                }
+
+                resultModal.classList.add(
+                    'active'
+                );
+
+            }, 300);
+        }
+
+        /* =========================================================
+           10. CONFETTI PARTICLE SYSTEM
+        ========================================================= */
+
+        const confettiCanvas =
+            document.getElementById(
+                'confetti-canvas'
+            );
+
+        const cCtx =
+            confettiCanvas.getContext('2d');
+
+        let confettiParticles = [];
+
+        let confettiAnimationId =
+            null;
+
+        function resizeConfettiCanvas() {
+
+            confettiCanvas.width =
+                window.innerWidth;
+
+            confettiCanvas.height =
+                window.innerHeight;
+        }
+
+        window.addEventListener(
+            'resize',
+            resizeConfettiCanvas
+        );
+
+        resizeConfettiCanvas();
+
+        function launchConfetti() {
+
+            confettiParticles = [];
+
+            const colors = [
+                '#f44336',
+                '#e91e63',
+                '#9c27b0',
+                '#673ab7',
+                '#3f51b5',
+                '#2196f3',
+                '#03a9f4',
+                '#00bcd4',
+                '#009688',
+                '#4caf50',
+                '#8bc34a',
+                '#cddc39',
+                '#ffeb3b',
+                '#ffc107',
+                '#ff9800'
+            ];
+
+            for (let i = 0; i < 150; i++) {
+
+                confettiParticles.push({
+
+                    x:
+                        Math.random() *
+                        confettiCanvas.width,
+
+                    y:
+                        -20 -
+                        Math.random() *
+                        100,
+
+                    size:
+                        Math.random() *
+                        8 +
+                        4,
+
+                    color:
+                        colors[
+                            Math.floor(
+                                Math.random() *
+                                colors.length
+                            )
+                        ],
+
+                    vx:
+                        (Math.random() - 0.5) *
+                        4,
+
+                    vy:
+                        Math.random() *
+                        5 +
+                        3,
+
+                    rotation:
+                        Math.random() *
+                        360,
+
+                    vRot:
+                        (Math.random() - 0.5) *
+                        10,
+
+                    opacity: 1
+                });
+            }
+
+            if (confettiAnimationId) {
+
+                cancelAnimationFrame(
+                    confettiAnimationId
+                );
+            }
+
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+
+            cCtx.clearRect(
+                0,
+                0,
+                confettiCanvas.width,
+                confettiCanvas.height
+            );
+
+            let activeParticles = 0;
+
+            confettiParticles.forEach(
+                (p) => {
+
+                    if (p.opacity > 0) {
+
+                        activeParticles++;
+
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        p.rotation +=
+                            p.vRot;
+
+                        if (
+                            p.y >
+                            confettiCanvas.height -
+                            50
+                        ) {
+
+                            p.opacity -=
+                                0.02;
+                        }
+
+                        cCtx.save();
+
+                        cCtx.translate(
+                            p.x,
+                            p.y
+                        );
+
+                        cCtx.rotate(
+                            (p.rotation *
+                                Math.PI) /
+                            180
+                        );
+
+                        cCtx.globalAlpha =
+                            Math.max(
+                                0,
+                                p.opacity
+                            );
+
+                        cCtx.fillStyle =
+                            p.color;
+
+                        cCtx.fillRect(
+                            -p.size / 2,
+                            -p.size / 2,
+                            p.size,
+                            p.size
+                        );
+
+                        cCtx.restore();
+                    }
+                }
+            );
+
+            if (activeParticles > 0) {
+
+                confettiAnimationId =
+                    requestAnimationFrame(
+                        animateConfetti
+                    );
+
+            } else {
+
+                cCtx.clearRect(
+                    0,
+                    0,
+                    confettiCanvas.width,
+                    confettiCanvas.height
+                );
+            }
+        }
+
+        /* =========================================================
+           11. EVENT HANDLERS
+        ========================================================= */
+
+        /*
+         * Spin button.
+         */
+        spinBtn.addEventListener(
+            'click',
+            spin
+        );
+
+        /*
+         * Close winner popup.
+         *
+         * IMPORTANT:
+         * Closing the popup does NOT modify the wheel.
+         */
+        closeModalBtn.addEventListener(
+            'click',
+            () => {
+
+                resultModal.classList.remove(
+                    'active'
+                );
+
+                /*
+                 * Nothing else happens.
+                 *
+                 * All 10 options remain exactly where they are.
+                 */
+            }
+        );
+
+        /*
+         * Allow clicking the dark background
+         * to close the winner popup.
+         */
+        resultModal.addEventListener(
+            'click',
+            (event) => {
+
+                if (
+                    event.target ===
+                    resultModal
+                ) {
+
+                    resultModal.classList.remove(
+                        'active'
+                    );
+                }
+            }
+        );
+
+        /* =========================================================
+           12. INITIALIZE
+        ========================================================= */
+
+        initBulbs();
+
+        preloadImages(() => {
+
+            /*
+             * Draw exactly 10 permanent segments.
+             */
+            drawWheel();
+
+        });
+
+    </script>
+
+</body>
+</html>
+
